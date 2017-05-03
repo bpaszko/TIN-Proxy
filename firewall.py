@@ -8,4 +8,5 @@ class Firewall:
 	#return true if accept else false
 	def check_message(self, address, command, subcommand):
 		#should handle logging
-		raise NotImplementedError()
+		return True
+		#raise NotImplementedError()
