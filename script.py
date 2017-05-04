@@ -1,14 +1,16 @@
+#!/bin/python
+
 import sys
 import getopt
 from logger import Logger
-from firewall import Firewall
+from firewall.firewall import Firewall
 from proxy import Proxy
-import socket 
+import socket
 
 def help():
-	print('Usage:\n \
-		python script.py --net-config= --firewall-config= --log-level= --log-file= \
-		python script.py --net-config= --firewall-config= --log-level=0' )
+	print('Usage:\n'
+	      'python script.py --net-config= --firewall-config= --log-level= --log-file=\n'
+	      'python script.py --net-config= --firewall-config= --log-level=0' )
 	sys.exit()
 
 def parse_net_config(config):
@@ -27,11 +29,11 @@ def parse_net_config(config):
 
 
 #COMMAND LINE LOOKS LIKE
-#python script.py -net-config=path1 -log-level=0 
-#python script.py -net-config=path1 -firewall-config=path2 -log-level=1|2|3 -log-file=path3 
+#python script.py -net-config=path1 -log-level=0
+#python script.py -net-config=path1 -firewall-config=path2 -log-level=1|2|3 -log-file=path3
 # --net-config [mandatory] specifies proxy port, server ip and server port
-# --firewall-config [mandatory] 
-# --log-level [mandatory] 
+# --firewall-config [mandatory]
+# --log-level [mandatory]
 #	0 - no logs
 #	1 - log blocked requests
 #	2 - log passed requests
