@@ -18,7 +18,8 @@ class Rule:
     def __str__(self):
         return str(self.__dict__)
 
-    def check_against(ip, port, command, subcommand):
+    def check_against(self, address, command, subcommand):
+        ip, port = address
         for byte_range, byte in zip(self.ip_range, ip.split('.')):
             if byte not in byte_range:
                 return None

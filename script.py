@@ -4,8 +4,13 @@ import sys
 import getopt
 from logger import Logger
 from firewall.firewall import Firewall
-from proxy import Proxy
+from proxy.proxyv2 import Proxy
 import socket
+
+class FirewallMock:
+	def check_message(self, address, command, subcommand):
+		return True
+
 
 def help():
 	print('Usage:\n'
@@ -71,7 +76,11 @@ logger = None
 if log_level != 0:
 	logger = Logger(log_file, log_level)
 
-firewall = Firewall(firewall_config, logger)
+#firewall = Firewall(firewall_config, logger)
+#proxy = Proxy(host, server, firewall)
+#proxy.start()
 
+
+firewall = FirewallMock()
 proxy = Proxy(host, server, firewall)
 proxy.start()

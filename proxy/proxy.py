@@ -27,6 +27,13 @@ class Proxy:
 		self.running = True
 
 
+	def start(self):
+		self.set_up_sockets()
+		thread = threading.Thread(target=self.send_request_and_response)
+		thread.setDaemon(True)
+		thread.start()
+		self.listen_for_messages()
+
 	def set_up_sockets(self):
 		try:
 			self.server_socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
@@ -78,13 +85,6 @@ class Proxy:
 		raise e
 
 
-	def start(self):
-		self.set_up_sockets()
-		thread = threading.Thread(target=self.send_request_and_response)
-		thread.setDaemon(True)
-		thread.start()
-		self.listen_for_messages()
-
 
 	#THREAD A - receive messages from client
 	def listen_for_messages(self):
@@ -92,7 +92,7 @@ class Proxy:
 			while self.running:
 				conn, address = self.listening_socket.accept()
 				print("[*] Received Connection")
-				threading.Thread(target=self.filter_message, args=(conn,address)).start()
+				self.filter_message(conn,address)
 		except KeyboardInterrupt:
 			print('[*] Shutting down proxy')
 			self.exit_proxy()
@@ -100,7 +100,7 @@ class Proxy:
 			return
 
 
-	#THREADS B - filter messages and pass them to queue
+	#filter messages and pass them to queue
 	def filter_message(self, conn, address):
 		try:
 			message, command, subcommand = self.get_request_from_client(conn)
@@ -111,6 +111,7 @@ class Proxy:
 
 		if not self.firewall.check_message(address, command, subcommand):
 			return
+
 		self.queue_condition.acquire()
 		self.queue.append((conn, message))
 		if len(self.queue) == 1:
@@ -126,9 +127,8 @@ class Proxy:
 				self.queue_condition.wait()
 			conn, message = self.queue.pop(0)
 			self.queue_condition.release()
-
 			try:
-				response = self.communicate_with_server(message) 
+				response = self.communicate_with_server(message)
 				self.send_response_to_client(conn, response)
 			except CriticalDisconnectException:
 				print("*** Error, lost connection to server ***")
