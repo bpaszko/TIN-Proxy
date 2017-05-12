@@ -21,8 +21,8 @@ class Proxy:
 		#list of sockets to communicate with connected clients
 		self.connections_queue = list()
 		#queue - [list of tuples (conn - socket to client, message)]
-		self.queue = list()
-		self.queue_condition = threading.Condition()
+		self.message_queue = list()
+		self.message_queue_condition = threading.Condition()
 		#firewall - blocks or passes message
 		self.firewall = firewall
 		self.listening_socket = None
@@ -35,13 +35,7 @@ class Proxy:
 		try:
 			while self.running:
 				readable, _, _ = select.select(self.connections_queue, list(), list())
-				for sock in readable:
-					if sock is self.listening_socket:
-						conn, address = self.listening_socket.accept()
-						print("[*] Received Connection")
-						self.connections_queue.append(conn)
-					else:
-						self.filter_message(sock)
+				self.check_ready_connections(readable)
 
 		except KeyboardInterrupt:
 			print('[*] Shutting down proxy')
@@ -50,11 +44,20 @@ class Proxy:
 			return
 
 
+	def check_ready_connections(self, readable):
+		for sock in readable:
+			if sock is self.listening_socket:
+				conn, address = self.listening_socket.accept()
+				print("[*] Received Connection")
+				self.connections_queue.append(conn)
+			else:
+				self.handle_connection(sock)
+
+
 	#filter messages and pass them to queue
-	def filter_message(self, conn):
+	def handle_connection(self, conn):
 		try:
-			message, command, subcommand = self.get_request_from_client(conn)
-			address = conn.getpeername()
+			msg, command, subcommand = self.get_request_from_client(conn)
 		except struct.error:
 			print("*** Error, received invalid data from client ***")
 			#conn.close()	#OR RETURN?
@@ -64,26 +67,53 @@ class Proxy:
 			self.remove_client(conn)
 			return
 
+		filter_data = (conn.getpeername(), command, subcommand)
+		self.filter_message(conn, msg, filter_data)
+
+
+	def get_request_from_client(self, conn):
+		data_part_1 = self.get_data(conn, FRAME_SIZE)
+		_, _, _, _, _, data_size = struct.unpack('!hBBhBh', data_part_1)
+		data_part_2 = self.get_data(conn, 6) 
+		_, command, subcommand = struct.unpack('!hhh', data_part_2)
+		data_part_3 = self.get_data(conn, data_size-6)
+
+		message = data_part_1 + data_part_2 + data_part_3
+		return message, command, subcommand
+
+
+	def get_data(self, conn, size):
+		data = ''
+		while len(data) < size:
+			packet = conn.recv(size-len(data))
+			if not packet:
+				raise DisconnectException
+			data += packet 
+		return data
+
+
+	def filter_message(self, conn, msg, filter_data):
+		address, command, subcommand = filter_data
 		if not self.firewall.check_message(address, command, subcommand):
 			return
 
-		self.queue_condition.acquire()
-		self.queue.append((conn, message))
-		if len(self.queue) == 1:
-			self.queue_condition.notify()
-		self.queue_condition.release()
+		self.message_queue_condition.acquire()
+		self.message_queue.append((conn, msg))
+		if len(self.message_queue) == 1:
+			self.message_queue_condition.notify()
+		self.message_queue_condition.release()
+
+
+
 
 
 	#THREAD C - send request to server and response to client
 	def send_request_and_response(self):
 		while self.running:
-			self.queue_condition.acquire()
-			if len(self.queue) == 0:
-				self.queue_condition.wait()
-			conn, message = self.queue.pop(0)
-			self.queue_condition.release()
+			conn, message = self.get_next_message_from_queue()
+
 			try:
-				response = self.send_data_to_server(message)
+				response = self.communicate_with_server(message)
 				self.send_response_to_client(conn, response)
 			except CriticalDisconnectException:
 				print("*** Error, lost connection to server ***")
@@ -94,18 +124,17 @@ class Proxy:
 				continue
 
 
-	#return binary request for server in Big endian and (command, subcommand) as decimal - for filtering
-	def get_request_from_client(self, conn):
-		data_part_1 = self.get_data(conn, FRAME_SIZE)
-		_, _, _, _, _, data_size = struct.unpack('!hBBhBh', data_part_1)
-		data_part_2 = self.get_data(conn, 6) 
-		_, command, subcommand = struct.unpack('!hhh', data_part_2)
-		data_part_3 = self.get_data(conn, data_size-6)
-		return data_part_1+data_part_2+data_part_3, command, subcommand
+	def get_next_message_from_queue(self):
+		self.message_queue_condition.acquire()
+		if len(self.message_queue) == 0:
+			self.message_queue_condition.wait()
+		conn, message = self.message_queue.pop(0)
+		self.message_queue_condition.release()
+		return conn, message
 
 
 	#return response from server
-	def send_data_to_server(self, message):
+	def communicate_with_server(self, message):
 		self.server_socket.sendall(message)
 		response_part_1 = self.get_data_from_server(FRAME_SIZE)
 		_, _, _, _, _, data_size = struct.unpack('!hBBhBh', response_part_1)
@@ -113,36 +142,29 @@ class Proxy:
 		return response_part_1 + response_part_2
 
 
+	def get_data_from_server(self, size):
+		data = ''
+		while len(data) < size:
+			packet = self.server_socket.recv(size-len(data))
+			if not packet:
+				raise CriticalDisconnectException
+			data += packet 
+		return data
+
+
 	#send response back to client
 	def send_response_to_client(self, conn, response):
 		try:
 			conn.sendall(response) 
 		except:
-			print('***Cant send response. Client closed connection***')
+			print('***Cant send response. Closed connection***')
 			self.remove_client(conn)
-
-
-	def get_data(self, conn, size):
-		data = conn.recv(size)
-		if not data:
-			raise DisconnectException
-		return data
-
-	def get_data_from_server(self, size):
-		data = self.server_socket.recv(size)
-		if not data:
-			raise CriticalDisconnectException
-		return data
 
 
 	def remove_client(self, conn):
 		self.connections_queue.remove(conn)
 		#MAYBE REMOVE ALL MESSAGES FROM QUEUE
 		conn.close()
-
-
-
-
 
 
 
