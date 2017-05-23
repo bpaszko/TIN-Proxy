@@ -135,7 +135,10 @@ class Proxy:
 
 	#return response from server
 	def communicate_with_server(self, message):
-		self.server_socket.sendall(message)
+		try:
+			self.server_socket.sendall(message)
+		except:
+			raise CriticalDisconnectException
 		response_part_1 = self.get_data_from_server(FRAME_SIZE)
 		_, _, _, _, _, data_size = struct.unpack('!hBBhBh', response_part_1)
 		response_part_2 = self.get_data_from_server(data_size) 
