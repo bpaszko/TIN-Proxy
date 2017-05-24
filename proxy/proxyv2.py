@@ -73,11 +73,10 @@ class Proxy:
 
 	def get_request_from_client(self, conn):
 		data_part_1 = self.get_data(conn, FRAME_SIZE)
-		_, _, _, _, _, data_size = struct.unpack('!hBBhBh', data_part_1)
+		_, _, _, _, _, data_size = struct.unpack('<HBBHBH', data_part_1)
 		data_part_2 = self.get_data(conn, 6) 
-		_, command, subcommand = struct.unpack('!hhh', data_part_2)
+		_, command, subcommand = struct.unpack('<HHH', data_part_2)
 		data_part_3 = self.get_data(conn, data_size-6)
-
 		message = data_part_1 + data_part_2 + data_part_3
 		return message, command, subcommand
 
@@ -140,7 +139,7 @@ class Proxy:
 		except:
 			raise CriticalDisconnectException
 		response_part_1 = self.get_data_from_server(FRAME_SIZE)
-		_, _, _, _, _, data_size = struct.unpack('!hBBhBh', response_part_1)
+		_, _, _, _, _, data_size = struct.unpack('<HBBHBH', response_part_1)
 		response_part_2 = self.get_data_from_server(data_size) 
 		return response_part_1 + response_part_2
 
