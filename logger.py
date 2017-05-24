@@ -21,7 +21,6 @@ class Logger:
 	
 	def log(self, address, command, subcommand, action):
 		if action:
-
 			self._log(address, command, subcommand, 'accept')
 		else:
 			self._log(address, command, subcommand, 'drop')

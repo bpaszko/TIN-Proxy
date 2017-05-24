@@ -81,6 +81,5 @@ host, server = parse_net_config(net_config)
 
 logger = Logger(log_file, log_level)
 firewall = Firewall(firewall_config, logger)
-#firewall = FirewallMock()
 proxy = Proxy(host, server, firewall)
 proxy.start()
