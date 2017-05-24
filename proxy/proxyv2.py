@@ -94,6 +94,7 @@ class Proxy:
 	def filter_message(self, conn, msg, filter_data):
 		address, command, subcommand = filter_data
 		if not self.firewall.check_message(address, command, subcommand):
+			self.remove_client(conn)
 			return
 
 		self.message_queue_condition.acquire()
