@@ -13,9 +13,12 @@ class Firewall(object):
 
     #return true if accept else false
     def check_message(self, address, command, subcommand):
-        for rule in self.rules:
+        for rule in self.rules: 
             result = rule.check_against(address[0], address[1], command, subcommand)
             if result is not None:
+                self.logger.log(address, command, subcommand, result)
                 return result
-
+        self.logger.log(address, command, subcommand, False)
         return False
+
+

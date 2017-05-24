@@ -9,7 +9,7 @@ import socket
 
 class FirewallMock:
 	def check_message(self, address, command, subcommand):
-		return True
+		return None
 
 
 def help():
@@ -30,6 +30,7 @@ def parse_net_config(config):
 
 	server_address, server_port = server.split(':')
 	host_address = socket.gethostbyname(socket.gethostname())
+	print (host_address, int(host_port)), (server_address, int(server_port))
 	return (host_address, int(host_port)), (server_address, int(server_port))
 
 
@@ -72,15 +73,14 @@ for opt in optlist:
 		log_file = opt[1]
 
 host, server = parse_net_config(net_config)
-logger = None
-if log_level != 0:
-	logger = Logger(log_file, log_level)
+
 
 #firewall = Firewall(firewall_config, logger)
 #proxy = Proxy(host, server, firewall)
 #proxy.start()
 
-
-firewall = FirewallMock()
+logger = Logger(log_file, log_level)
+firewall = Firewall(firewall_config, logger)
+#firewall = FirewallMock()
 proxy = Proxy(host, server, firewall)
 proxy.start()
