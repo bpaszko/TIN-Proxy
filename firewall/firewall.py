@@ -1,4 +1,5 @@
 from .rule import Rule
+from logger_v2 import Logger
 
 class Firewall(object):
     def __init__(self, rules_file, logger):

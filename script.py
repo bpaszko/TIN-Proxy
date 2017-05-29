@@ -2,7 +2,7 @@
 
 import sys
 import getopt
-from logger import Logger
+from logger_v2 import Logger
 from firewall.firewall import Firewall
 from proxy.proxyv2 import Proxy
 import socket
@@ -79,7 +79,8 @@ host, server = parse_net_config(net_config)
 #proxy = Proxy(host, server, firewall)
 #proxy.start()
 
-logger = Logger(log_file, log_level)
-firewall = Firewall(firewall_config, logger)
-proxy = Proxy(host, server, firewall)
+f_logger = Logger(log_file, log_level, 'firewall')
+p_logger = Logger('logs/proxy_log.txt', log_level, 'proxy')
+firewall = Firewall(firewall_config, f_logger)
+proxy = Proxy(host, server, firewall, p_logger)
 proxy.start()

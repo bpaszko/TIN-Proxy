@@ -2,7 +2,9 @@ import threading
 import socket
 import sys
 import struct 
-import select 
+import select
+
+from logger_v2 import Logger 
 
 FRAME_SIZE = 9 #9 bytes (+ header?)
 
@@ -28,6 +30,7 @@ class Proxy:
 		self.listening_socket = None
 		self.server_socket = None
 		self.running = True
+		self.logger = logger
 
 
 	#THREAD A - receive messages from client
@@ -49,6 +52,7 @@ class Proxy:
 			if sock is self.listening_socket:
 				conn, address = self.listening_socket.accept()
 				print("[*] Received Connection")
+				self.logger.log_connection(address, ' connect')
 				self.connections_queue.append(conn)
 			else:
 				self.handle_connection(sock)
