@@ -5,7 +5,8 @@ import socket
 import SLMP
 import sys
 
-PLC_IP = '127.0.1.1'
+PLC_IP = '127.0.0.1'
+CLIENT_IP = '127.0.1.1'
 PLC_PORT = 60000 #1280
 BUFFER_SIZE = 100
 
@@ -30,7 +31,7 @@ print s
 #print dir.__dict__
 
 s = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-s.bind(('127.0.1.1', int(sys.argv[3])))
+s.bind((CLIENT_IP, int(sys.argv[3])))
 s.connect((PLC_IP, PLC_PORT))
 s.send(header)
 

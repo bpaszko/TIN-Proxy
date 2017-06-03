@@ -1,0 +1,71 @@
+Instrukcja Linuxa:
+
+1. Przejsć do katalogu test znajdującego się w katalogu z projektem.
+2. uruchomić serwer w terminalu korzystając z polecenia( domyślny adres ip i port znajduje się w pliku plc_server):
+python plc_server.py
+3. stworzyć plik  z konfiguracją sieciową 'net.config' w którym powinien znajdować sie adres ip oraz nr portu servera oraz nr portu na którym ma nasłuchiwać proxy(przykladowy plik konfiguracyjny znajduje się w katalogu 'resources' projektu)
+    
+    # przykładowa zawartość pliku net.config
+    127.0.0.1:1280
+    60000
+
+
+4 stworzyc plik z regułami, ktore określą jaki ruchu  ma być filtrowany (przykładowe konfiguracje w katalogu 'resources' projektu)
+przykładowe zawartości pliku konfiguracyjnego:
+
+    # przykładowy config:
+    drop * command=0401 subcommand=any
+    accept * command=1401 subcommand=any
+
+    # przykładowy config:
+    drop 127.0.1.1:* command=any subcommand=any
+    accept 127.0.0.1:* command=any subcommand=any
+    
+    # przykładowy config:
+    accept 127.0.1.1:10000-10049 command=any subcommand=any
+    drop 127.0.1.1:10050-10099 command=any subcommand=any
+    accept 127.0.0.1:* command=any subcommand=any
+
+5. przejsć do katalogu projektu i uruchomić znajdujący się tam skrypt korzystając z polecenia:
+
+python2 script.py --net-config='resources/net.config' --firewall-config='resources/fw.config' --log-level=3 --log-file='logs/firewall_log.txt'
+
+gdzie:
+--net-config='ścieżka do pliku z konfiguracją sieciową' 
+--firewall-config='ścieżka do pliku z regułami'
+--log-level=poziom logowania #0 - brak logowania #1 - logowanie zablokowanych połączeń #2 - logowanie akceptowanych połączeń #3 - loguj wszystko
+--log-file='ścieżka do pliku do ktorego program będzie logował ruch'
+
+6. Pojawi się informacja że proxy zostało uruchomione
+
+
+
+Testy manualne w projekcie:
+
+Do testów potrzeba działającego proxy. Skrypty testowe znajdyją sie w katalogu tests
+
+1. Filtrowanie IP
+
+python2 script.py --net-config='resources/net.config' --firewall-config='resources/fw_ip.config' --log-level=3 --log-file='logs/firewall_log.txt'
+
+z katalogu 'tests' uruchamiamy test_ip.py komendą:
+
+python test_ip.py
+
+2. Porty
+
+python2 script.py --net-config='resources/net.config' --firewall-config='resources/fw_ports.config' --log-level=3 --log-file='logs/firewall_log.txt'
+
+python test_ports.py
+
+3. Komendy
+
+python2 script.py --net-config='resources/net.config' --firewall-config='resources/fw_command.config' --log-level=3 --log-file='logs/firewall_log.txt'
+
+python test_command.py
+
+4. Wątki
+
+python2 script.py --net-config='resources/net.config' --firewall-config='resources/fw_command.config' --log-level=3 --log-file='logs/firewall_log.txt'
+
+python test_thread.py

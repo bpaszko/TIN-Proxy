@@ -6,7 +6,7 @@ import SLMP
 import sys
 
 PLC_IP = '127.0.0.1'
-CLIENT_IP = '127.0.0.1'
+CLIENT_IP = '127.0.1.1'
 PLC_PORT = 60000  #1280
 BUFFER_SIZE = 100
 
@@ -30,11 +30,15 @@ print binary_array2string(message)
 s = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
 s.bind((CLIENT_IP, int(sys.argv[3])))
 s.connect((PLC_IP, PLC_PORT))
-s.send(message)
 
-response = s.recv(BUFFER_SIZE)
+for i in range(100):
+    s.send(message)
+    
+    print('!!!!', i)
 
-print "Response packet"
-print binary_array2string(response)
+    response = s.recv(BUFFER_SIZE)
+
+    print "Response packet"
+    print binary_array2string(response)
 
 s.close()

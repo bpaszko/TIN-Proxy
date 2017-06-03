@@ -2,9 +2,9 @@
 
 import sys
 import getopt
-from logger_v2 import Logger
+from logger import Logger
 from firewall.firewall import Firewall
-from proxy.proxyv2 import Proxy
+from proxy.proxy import Proxy
 import socket
 
 class FirewallMock:
@@ -29,7 +29,7 @@ def parse_net_config(config):
 		sys.exit()
 
 	server_address, server_port = server.split(':')
-	host_address = socket.gethostbyname(socket.gethostname())
+	host_address = socket.gethostbyname('localhost')
 	print (host_address, int(host_port)), (server_address, int(server_port))
 	return (host_address, int(host_port)), (server_address, int(server_port))
 

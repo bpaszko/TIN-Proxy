@@ -4,7 +4,7 @@ from struct import *
 import socket
 import SLMP
 
-PLC_SERVER_IP = '127.0.1.1'
+PLC_SERVER_IP = '127.0.0.1'
 PLC_SERVER_PORT = 1280
 BUFFER_SIZE = 2000
 
